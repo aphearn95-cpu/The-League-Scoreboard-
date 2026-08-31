@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>League Median Tracker</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="title-block">
+      <h1 id="leagueTitle">Loading…</h1>
+      <div id="leagueSeason" class="subtitle"></div>
+    </div>
+
+    <nav class="tabs">
+      <button id="tabScoreboard" class="tab-btn active">Scoreboard</button>
+      <button id="tabStandings" class="tab-btn">Standings</button>
+    </nav>
+
+    <div class="topbar-controls">
+      <select id="weekSelect" aria-label="Select week"></select>
+      <button id="settingsBtn" class="icon-btn" title="Settings" aria-label="Settings">⚙</button>
+    </div>
+  </header>
+
+  <div class="status-bar">
+    <h2 id="weekHeading"></h2>
+    <span id="lastUpdated" class="last-updated"></span>
+  </div>
+
+  <main id="scoreboardView" class="view">
+    <div id="scoreboardGrid" class="scoreboard-grid"></div>
+  </main>
+
+  <main id="standingsView" class="view hidden">
+    <div id="standingsTableWrap"></div>
+  </main>
+
+  <div id="matchupModal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <button id="modalClose" class="modal-close" aria-label="Close">✕</button>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+  <div id="settingsModal" class="modal-overlay hidden">
+    <div class="modal-content settings-content">
+      <h3>Settings</h3>
+      <label for="leagueIdInput">Sleeper League ID</label>
+      <input id="leagueIdInput" type="text" placeholder="e.g. 1387827434572754944" />
+      <p class="settings-hint">
+        Sleeper issues a new league ID each season. Update this here at the start of a new
+        season instead of editing the code.
+      </p>
+      <div class="settings-actions">
+        <button id="cancelSettings" class="btn-secondary">Cancel</button>
+        <button id="saveSettings" class="btn-primary">Save &amp; Reload</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="sleeper-api.js"></script>
+  <script src="scoring.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
