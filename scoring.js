@@ -230,3 +230,35 @@ const POSITION_COLORS = {
 function positionColor(pos) {
   return POSITION_COLORS[pos] || POSITION_COLORS.FLEX;
 }
+
+// ------------------------------------------------------------ boogie bowl
+//
+// Playoff format: seeds 1-3 get a Round 1 bye. Seeds 4 and 5 play a
+// single-elimination "Boogie Bowl" - the loser is out, the winner carries
+// their Boogie Bowl score forward into a 2-week Round 1 matchup against one
+// of the top-3 seeds. Which top-3 seed they get is decided in advance: the
+// 1-seed ranks seeds 3, 4, and 5 in order of who they'd most want to face.
+// Once the Boogie Bowl is decided, whichever of {seed 3, Boogie Bowl winner}
+// is ranked higher on that list becomes the 1-seed's Round 1 opponent; the
+// other one instead plays the 2-seed.
+//
+// oneSeedRanking: an array of exactly the seed numbers 3, 4, 5 in preference
+// order (most-wanted opponent first), e.g. [4, 3, 5].
+// boogieBowlWinnerSeed: 4 or 5 - whichever seed won the Boogie Bowl - or
+// null/undefined if that game hasn't been decided yet.
+function resolveBoogieBowlBracket(oneSeedRanking, boogieBowlWinnerSeed) {
+  if (!Array.isArray(oneSeedRanking) || oneSeedRanking.length !== 3) return null;
+  if (boogieBowlWinnerSeed == null) {
+    return { pending: true, oneSeedOpponentSeed: null, twoSeedOpponentSeed: null };
+  }
+  const eliminatedSeed = boogieBowlWinnerSeed === 4 ? 5 : 4;
+  // oneSeedRanking is already in preference order, so filtering out the
+  // eliminated seed leaves the surviving two in that same preference order -
+  // whichever comes first is the 1-seed's more-wanted survivor.
+  const remaining = oneSeedRanking.filter((s) => s !== eliminatedSeed);
+  return {
+    pending: false,
+    oneSeedOpponentSeed: remaining[0],
+    twoSeedOpponentSeed: remaining[1],
+  };
+}

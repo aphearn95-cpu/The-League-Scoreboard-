@@ -20,6 +20,8 @@ const state = {
   recordsByRoster: {}, // roster_id -> { wins, losses, ties, seed } (seed null for median)
   pollTimer: null,
   activeTab: 'scoreboard',
+  boogieBowlSaved: null, // [seed, seed, seed] preference order loaded from boogie-bowl.json, or null
+  bbDraftOrder: null, // in-progress reorder state for the ranking builder UI
 };
 
 // ---------------------------------------------------------------- helpers
@@ -45,6 +47,23 @@ function getLeagueId() {
 
 function setLeagueId(id) {
   localStorage.setItem('smt:leagueId', id);
+}
+
+// The 1-seed's Boogie Bowl opponent preference, if someone has saved one.
+// Lives as a plain JSON file alongside index.html (no backend) - see
+// buildBoogieBowlPanel(). Missing file / bad JSON just means "not set yet."
+async function loadBoogieBowlRanking() {
+  try {
+    const res = await fetch('boogie-bowl.json', { cache: 'no-store' });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (Array.isArray(data.oneSeedRanking) && data.oneSeedRanking.length === 3) {
+      return data.oneSeedRanking;
+    }
+    return null;
+  } catch (e) {
+    return null;
+  }
 }
 
 // ------------------------------------------------------------ league load
@@ -258,13 +277,26 @@ function sideDescriptor(entry, isMedian, mr, isLeftSide) {
   const bits = [handle, recordText].filter(Boolean);
   const sub = isLeftSide ? bits.join(' · ') : bits.slice().reverse().join(' · ');
   const blended = mr && mr.ranking ? mr.ranking.find((r) => r.roster_id === rosterId) : null;
+  // The team facing the median this week is deliberately excluded from
+  // mr.ranking (only the "other 10" teams get ranked to find the median's
+  // score), so it has no pre-computed blended value - compute its own
+  // honest live-blended projection directly rather than falling back to its
+  // raw actual points (which would wrongly show 0/partial instead of a real
+  // projection while its game is still in progress).
+  const wd = state.weekData;
+  const ownBlended =
+    blended != null
+      ? blended.blended
+      : wd
+      ? teamLiveBlendedPoints(entry, wd.players, wd.gameStatusByTeam, wd.projectionPointsMap)
+      : entry.points;
   return {
     rosterId,
     isMedian: false,
     name: rosterName(rosterId),
     avatarNode: avatarEl(rosterId, false, 'avatar-lg'),
     score: entry.points,
-    proj: blended ? blended.blended : entry.points,
+    proj: ownBlended,
     sub,
   };
 }
@@ -813,6 +845,9 @@ async function renderStandings() {
   medianScroll.appendChild(medianTable);
   medianWrap.appendChild(medianScroll);
   wrap.appendChild(medianWrap);
+
+  const bbPanel = buildBoogieBowlPanel();
+  if (bbPanel) wrap.appendChild(bbPanel);
 }
 
 function cutLineRow(label) {
@@ -823,6 +858,178 @@ function cutLineRow(label) {
   td.innerHTML = `<div class="cut-line"><span>${label}</span></div>`;
   tr.appendChild(td);
   return tr;
+}
+
+// --------------------------------------------------------- boogie bowl UI
+
+function seedRosterId(seed) {
+  const cache = state.standingsCache;
+  if (!cache || !cache.rows || cache.rows.length < seed) return null;
+  return cache.rows[seed - 1].roster_id;
+}
+
+// Standings-tab panel: shows the saved 1-seed preference (if any) and the
+// resulting bracket preview, plus a ranking builder anyone can use to
+// generate the file contents to save. There's no login and nothing is
+// locked - per the league's own call, this is meant as a shared, honor-system
+// tool, not an access-controlled one. Saving means committing a small JSON
+// file (boogie-bowl.json) to the same GitHub repo the site itself lives in;
+// that keeps it visible to everyone with no new backend, accounts, or cost.
+function buildBoogieBowlPanel() {
+  const cache = state.standingsCache;
+  if (!cache || !cache.rows || cache.rows.length < 5) return null;
+
+  const seed1 = seedRosterId(1);
+  const seed2 = seedRosterId(2);
+  const seed3 = seedRosterId(3);
+  const seed4 = seedRosterId(4);
+  const seed5 = seedRosterId(5);
+
+  if (!state.bbDraftOrder) {
+    state.bbDraftOrder =
+      state.boogieBowlSaved && state.boogieBowlSaved.length === 3 ? state.boogieBowlSaved.slice() : [3, 4, 5];
+  }
+
+  const wrap = document.createElement('div');
+  wrap.className = 'bb-panel';
+
+  const heading = document.createElement('div');
+  heading.className = 'bb-heading';
+  heading.textContent = 'Boogie Bowl';
+  wrap.appendChild(heading);
+
+  const intro = document.createElement('div');
+  intro.className = 'bb-intro';
+  intro.innerHTML = `Seeds 4 and 5 - <strong>${rosterName(seed4)}</strong> vs <strong>${rosterName(
+    seed5
+  )}</strong> - play a single-elimination game in Week 14. The winner carries that score into a 2-week Round 1 matchup against whichever top-3 seed <strong>${rosterName(
+    seed1
+  )}</strong> (the 1-seed) ranks higher below.`;
+  wrap.appendChild(intro);
+
+  if (state.boogieBowlSaved && state.boogieBowlSaved.length === 3) {
+    const savedBox = document.createElement('div');
+    savedBox.className = 'bb-saved';
+    const label = document.createElement('div');
+    label.className = 'bb-saved-label';
+    label.textContent = `${rosterName(seed1)}'s saved preference (most → least wanted opponent)`;
+    savedBox.appendChild(label);
+    const order = document.createElement('div');
+    order.className = 'bb-saved-order';
+    state.boogieBowlSaved.forEach((seed, i) => {
+      const chip = document.createElement('span');
+      chip.className = 'bb-chip';
+      chip.textContent = `${i + 1}. ${rosterName(seedRosterId(seed))}`;
+      order.appendChild(chip);
+    });
+    savedBox.appendChild(order);
+    wrap.appendChild(savedBox);
+
+    const note = document.createElement('div');
+    note.className = 'bb-preview-note';
+    note.textContent = `Once the Boogie Bowl is played, whichever of ${rosterName(
+      seed3
+    )} or the Boogie Bowl winner ranks higher above becomes ${rosterName(
+      seed1
+    )}'s Round 1 opponent - the other plays ${rosterName(seed2)}.`;
+    wrap.appendChild(note);
+  } else {
+    const none = document.createElement('div');
+    none.className = 'bb-none';
+    none.textContent = 'No saved preference yet - use the builder below to set one.';
+    wrap.appendChild(none);
+  }
+
+  const builder = document.createElement('div');
+  builder.className = 'bb-builder';
+  const builderLabel = document.createElement('div');
+  builderLabel.className = 'bb-builder-label';
+  builderLabel.textContent = `Ranking builder - order who ${rosterName(seed1)} would rather face`;
+  builder.appendChild(builderLabel);
+
+  const list = document.createElement('div');
+  list.className = 'bb-order-list';
+  state.bbDraftOrder.forEach((seed, i) => {
+    const row = document.createElement('div');
+    row.className = 'bb-order-row';
+    const nameEl = document.createElement('div');
+    nameEl.className = 'bb-order-name';
+    nameEl.innerHTML = `<span class="bb-order-rank">${i + 1}</span> ${rosterName(
+      seedRosterId(seed)
+    )} <span class="bb-order-seed">(#${seed})</span>`;
+    row.appendChild(nameEl);
+
+    const btns = document.createElement('div');
+    btns.className = 'bb-order-btns';
+    const btnUp = document.createElement('button');
+    btnUp.className = 'bb-order-btn';
+    btnUp.type = 'button';
+    btnUp.textContent = '↑';
+    btnUp.disabled = i === 0;
+    btnUp.addEventListener('click', () => {
+      const arr = state.bbDraftOrder;
+      [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]];
+      renderStandings();
+    });
+    const btnDown = document.createElement('button');
+    btnDown.className = 'bb-order-btn';
+    btnDown.type = 'button';
+    btnDown.textContent = '↓';
+    btnDown.disabled = i === state.bbDraftOrder.length - 1;
+    btnDown.addEventListener('click', () => {
+      const arr = state.bbDraftOrder;
+      [arr[i], arr[i + 1]] = [arr[i + 1], arr[i]];
+      renderStandings();
+    });
+    btns.appendChild(btnUp);
+    btns.appendChild(btnDown);
+    row.appendChild(btns);
+    list.appendChild(row);
+  });
+  builder.appendChild(list);
+
+  const output = document.createElement('div');
+  output.className = 'bb-output hidden';
+
+  const genBtn = document.createElement('button');
+  genBtn.className = 'btn-primary bb-generate-btn';
+  genBtn.type = 'button';
+  genBtn.textContent = 'Generate file to save';
+  genBtn.addEventListener('click', () => {
+    const json = JSON.stringify({ oneSeedRanking: state.bbDraftOrder }, null, 2);
+    output.classList.remove('hidden');
+    output.innerHTML = '';
+    const ta = document.createElement('textarea');
+    ta.className = 'bb-output-textarea';
+    ta.readOnly = true;
+    ta.value = json;
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'btn-secondary bb-copy-btn';
+    copyBtn.type = 'button';
+    copyBtn.textContent = 'Copy';
+    copyBtn.addEventListener('click', () => {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(json).then(() => {
+          copyBtn.textContent = 'Copied!';
+          setTimeout(() => (copyBtn.textContent = 'Copy'), 1500);
+        });
+      } else {
+        ta.select();
+      }
+    });
+    const hint = document.createElement('div');
+    hint.className = 'bb-output-hint';
+    hint.innerHTML =
+      'Save this as <code>boogie-bowl.json</code> in your GitHub repo (same "Add file → Upload files" flow you used to deploy the site) to make it visible to everyone. Anyone can update it at any time - including after Week 14 starts, if a correction is needed.';
+    output.appendChild(ta);
+    output.appendChild(copyBtn);
+    output.appendChild(hint);
+  });
+  builder.appendChild(genBtn);
+  builder.appendChild(output);
+  wrap.appendChild(builder);
+
+  return wrap;
 }
 
 // -------------------------------------------------------------- controls
@@ -888,6 +1095,8 @@ async function boot() {
   try {
     await loadLeagueMeta();
     await ensureRecords();
+    state.boogieBowlSaved = await loadBoogieBowlRanking();
+    state.bbDraftOrder = null; // recompute from the freshly-loaded saved ranking on next render
     await refreshCurrentWeek();
     startPolling();
   } catch (e) {

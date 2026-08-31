@@ -29,6 +29,10 @@ It's pre-configured for **The League** (Sleeper league ID `1387827434572754944`,
   lines: one between seeds 3 and 4 (Boogie Bowl bye) and one between seeds 5
   and 6 (playoff cut). The median team is pinned in its own section at the
   bottom with its own record/PF/PA, but isn't seeded.
+- **Boogie Bowl panel** — at the bottom of Standings: shows the 1-seed's
+  saved Round 1 opponent preference (if one's been saved) and the resulting
+  bracket logic, plus a ranking builder anyone can use to generate the file
+  contents to save. See "Setting the 1-seed's Boogie Bowl preference" below.
 - **Auto-refreshes** every 30 seconds while the page is open.
 
 ## Deploying to GitHub Pages (2 minutes, no command line)
@@ -47,6 +51,22 @@ It's pre-configured for **The League** (Sleeper league ID `1387827434572754944`,
 To update it later (e.g. if you ask me for changes), just re-upload the
 changed files through the same "Add file → Upload files" flow and commit —
 GitHub Pages redeploys automatically in under a minute.
+
+## Setting the 1-seed's Boogie Bowl preference
+
+Near the bottom of the Standings tab is a "Boogie Bowl" panel. Once the
+1-seed knows which of seeds 3, 4, and 5 they'd rather face in Round 1
+(seeds 4 and 5 play into that spot first), anyone can use the ranking
+builder there to order the three teams and click **Generate file to save**.
+That produces a small JSON snippet — copy it, then save it as a new file
+named `boogie-bowl.json` in the repo (same **Add file → Upload files** flow
+you used to deploy the site). Once that file exists, every visitor sees the
+saved preference and the resulting bracket logic.
+
+There's no login and nothing locks automatically — anyone can update the
+file at any time, including to fix a mistake after Week 14 starts. That's
+intentional: this is meant as a shared, honor-system tool for the league,
+not an access-controlled one.
 
 ## Updating for a new season
 
