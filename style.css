@@ -136,10 +136,164 @@ input[type='text'] {
   color: var(--danger);
 }
 
+.section-heading {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  margin: 0 0 12px;
+}
+
 .scoreboard-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 14px;
+}
+
+.matchup-card-playoff {
+  cursor: default;
+}
+
+.matchup-card-playoff:hover {
+  background: var(--bg-card);
+}
+
+.matchup-round-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+
+.pending-card {
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 96px;
+}
+
+.pending-card:hover {
+  background: var(--bg-card);
+}
+
+.pending-card-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.pending-card-text {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+/* consolation standings */
+
+.cons-panel {
+  margin-top: 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.cons-heading {
+  font-size: 1rem;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.cons-note {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+
+.cons-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cons-row {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.cons-row-leader {
+  border-color: var(--win);
+}
+
+.cons-rank {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--text-dim);
+  text-align: center;
+}
+
+.cons-row-leader .cons-rank {
+  color: var(--win);
+}
+
+.cons-team {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.cons-team-meta {
+  min-width: 0;
+}
+
+.cons-team-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cons-team-seed {
+  font-size: 0.68rem;
+  color: var(--text-dim);
+}
+
+.cons-score-block {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.cons-total {
+  font-size: 1.1rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.cons-breakdown {
+  font-size: 0.66rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  max-width: 220px;
+}
+
+.cons-pending-note {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  margin-top: 12px;
+  line-height: 1.4;
 }
 
 .matchup-card {

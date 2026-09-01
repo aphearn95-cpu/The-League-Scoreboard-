@@ -33,6 +33,20 @@ It's pre-configured for **The League** (Sleeper league ID `1387827434572754944`,
   saved Round 1 opponent preference (if one's been saved) and the resulting
   bracket logic, plus a ranking builder anyone can use to generate the file
   contents to save. See "Setting the 1-seed's Boogie Bowl preference" below.
+- **Playoffs** — once the week selector reaches Week 14, the Scoreboard tab
+  switches to a "Playoffs & Boogie Bowl" section: the live Boogie Bowl
+  matchup (seed 4 vs seed 5, Week 14 only), the two 2-week Round 1 matchups
+  once the 1-seed's saved preference resolves them, and — once Round 1
+  wraps up — the 2-week Championship and 3rd Place matchups for Weeks 16-17.
+  Everything live-updates and folds in projections the same way the regular
+  season scoreboard does.
+- **Consolation standings** — below the playoff bracket during Weeks 14-17:
+  every team that isn't in the final four (seeds 6+, plus whoever loses the
+  Boogie Bowl) competes on total points scored across all four playoff
+  weeks, no head-to-head. The list live-sorts itself with the current
+  highest scorer on top, and each row shows the running total plus its
+  week-by-week breakdown. The Boogie Bowl loser is added once that game is
+  final.
 - **Auto-refreshes** every 30 seconds while the page is open.
 
 ## Deploying to GitHub Pages (2 minutes, no command line)
@@ -84,6 +98,7 @@ no need to touch the code or redeploy.
   standard/PPR numbers.
 - Standings only count fully completed weeks; the in-progress week is shown
   live on the Scoreboard tab but not folded into the standings table yet.
-- The Boogie Bowl bracket itself (who actually plays whom) isn't simulated —
-  only the two seed-based cut lines are drawn, since the real pairings depend
-  on the 1-seed's pre-ranking decision each year.
+  Seeding for the playoff bracket and consolation standings is locked in at
+  Week 13's final standings.
+- Round 1 losers (the two teams that lose their Week 14-15 matchup) play
+  each other for 3rd place in Weeks 16-17, alongside the Championship.
