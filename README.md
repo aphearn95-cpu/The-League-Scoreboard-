@@ -34,12 +34,16 @@ It's pre-configured for **The League** (Sleeper league ID `1387827434572754944`,
   bracket logic, plus a ranking builder anyone can use to generate the file
   contents to save. See "Setting the 1-seed's Boogie Bowl preference" below.
 - **Playoffs** — once the week selector reaches Week 14, the Scoreboard tab
-  switches to a "Playoffs & Boogie Bowl" section: the live Boogie Bowl
-  matchup (seed 4 vs seed 5, Week 14 only), the two 2-week Round 1 matchups
-  once the 1-seed's saved preference resolves them, and — once Round 1
-  wraps up — the 2-week Championship and 3rd Place matchups for Weeks 16-17.
-  Everything live-updates and folds in projections the same way the regular
-  season scoreboard does.
+  switches to a "Playoffs & Boogie Bowl" section showing only whichever
+  round is actually live for the selected week: the Boogie Bowl matchup
+  (seed 4 vs seed 5) during Week 14, the two 2-week Round 1 matchups during
+  Week 15 once the 1-seed's saved preference resolves them, and the 2-week
+  Championship + 3rd Place matchups during Weeks 16-17. Earlier rounds drop
+  off the board once they're done, so you're never looking at more than one
+  round at a time. Everything live-updates and folds in projections the
+  same way the regular season scoreboard does. During the Boogie Bowl,
+  seeds 1-3 (who have the week off) get their own "On a Bye This Week"
+  panel showing how their Week 14 is going.
 - **Consolation standings** — below the playoff bracket during Weeks 14-17:
   every team that isn't in the final four (seeds 6+, plus whoever loses the
   Boogie Bowl) competes on total points scored across all four playoff
@@ -48,14 +52,18 @@ It's pre-configured for **The League** (Sleeper league ID `1387827434572754944`,
   week-by-week breakdown. The Boogie Bowl loser is added once that game is
   final.
 - **Auto-refreshes** every 30 seconds while the page is open.
+- **Branded** with the league crest in the header. The year on the crest
+  updates automatically to match whatever season the connected Sleeper
+  league is currently playing — no need to swap the image each year.
 
 ## Deploying to GitHub Pages (2 minutes, no command line)
 
 1. Go to [github.com/new](https://github.com/new) and create a new repository
    (public or private both work). Name it anything, e.g. `league-median`.
 2. On the new repo's page, click **Add file → Upload files**, then drag in
-   all 5 files from this folder (`index.html`, `style.css`, `sleeper-api.js`,
-   `scoring.js`, `app.js`). Commit the upload.
+   everything from this folder — the 5 files (`index.html`, `style.css`,
+   `sleeper-api.js`, `scoring.js`, `app.js`) plus the `assets` folder (the
+   league crest image). Commit the upload.
 3. Go to the repo's **Settings → Pages**. Under "Build and deployment,"
    set **Source** to "Deploy from a branch," pick the `main` branch and
    `/ (root)` folder, then **Save**.

@@ -47,6 +47,68 @@ body {
   font-size: 0.8rem;
 }
 
+/* brand: league crest + title, side by side */
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* The crest art is a static image with "2026" baked into a thin vertical
+   bar on its right edge. That bar's glyphs have been erased from the image
+   itself (assets/logo.png) - #brandYear is laid over the same spot and set
+   at boot() time to the league's live season, so the crest always shows the
+   right year without needing new art each season.
+   --logo-h is the only knob: resize the crest by changing it, everything
+   below (including the overlay position) is computed off of it since the
+   art's aspect ratio and the bar's position are both fixed proportions of
+   its height. */
+.brand-logo {
+  --logo-h: 88px;
+  position: relative;
+  height: var(--logo-h);
+  width: calc(var(--logo-h) * 0.7376);
+  flex-shrink: 0;
+}
+
+.brand-logo-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.brand-logo-year {
+  position: absolute;
+  left: calc(var(--logo-h) * 0.5346);
+  top: calc(var(--logo-h) * 0.1896);
+  width: calc(var(--logo-h) * 0.2149);
+  height: calc(var(--logo-h) * 0.0981);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(-90deg);
+  transform-origin: center;
+  color: #fff;
+  font-weight: 800;
+  font-size: calc(var(--logo-h) * 0.082);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .brand-logo {
+    --logo-h: 64px;
+  }
+}
+
 .tabs {
   display: flex;
   gap: 4px;

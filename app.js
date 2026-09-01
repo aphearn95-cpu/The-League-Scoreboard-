@@ -127,6 +127,7 @@ async function loadLeagueMeta() {
 
   el('leagueTitle').textContent = league.name || 'League';
   el('leagueSeason').textContent = `${league.season} Season`;
+  el('brandYear').textContent = league.season || '';
 
   populateWeekSelect();
 }
@@ -482,6 +483,7 @@ function buildMatchupHeader(leftDesc, rightDesc, isMedianMatchup, isFullyFinal) 
 function renderScoreboard() {
   el('scoreboardSectionHeading').classList.add('hidden');
   el('consolationWrap').classList.add('hidden');
+  el('byeWrap').classList.add('hidden');
 
   const grid = el('scoreboardGrid');
   grid.innerHTML = '';
@@ -563,6 +565,69 @@ function buildPendingCard(title, text) {
   card.appendChild(t);
   card.appendChild(p);
   return card;
+}
+
+// Boogie Bowl week only: seeds 1-3 don't play that week (they're waiting on
+// Round 1), so give them their own live-sorted panel - same visual language
+// as the consolation panel, but for just that one week's score.
+function buildByeSection(pointsByWeek, week) {
+  const rows = [1, 2, 3].map((seed) => {
+    const rosterId = seedRosterId(seed);
+    // Actual (not blended) - same live-updating points-scored-so-far number
+    // the Boogie Bowl card itself shows, no projections data needed.
+    const score = weekPts(pointsByWeek, week, rosterId, 'actual');
+    return { seed, rosterId, score };
+  });
+  rows.sort((a, b) => b.score - a.score);
+
+  const wrap = document.createElement('div');
+  wrap.className = 'cons-panel';
+
+  const heading = document.createElement('div');
+  heading.className = 'cons-heading';
+  heading.textContent = 'On a Bye This Week';
+  wrap.appendChild(heading);
+
+  const note = document.createElement('div');
+  note.className = 'cons-note';
+  note.textContent = `Seeds 1-3 sit out the Boogie Bowl and wait to see who they draw in Round 1. Here's how their Week ${week} is going.`;
+  wrap.appendChild(note);
+
+  const list = document.createElement('div');
+  list.className = 'cons-list';
+  rows.forEach((r, i) => {
+    const row = document.createElement('div');
+    row.className = 'cons-row' + (i === 0 ? ' cons-row-leader' : '');
+
+    const rank = document.createElement('div');
+    rank.className = 'cons-rank';
+    rank.textContent = String(i + 1);
+
+    const team = document.createElement('div');
+    team.className = 'cons-team';
+    team.appendChild(avatarEl(r.rosterId, false, 'avatar'));
+    const teamMeta = document.createElement('div');
+    teamMeta.className = 'cons-team-meta';
+    teamMeta.innerHTML = `<div class="cons-team-name">${rosterName(r.rosterId)}</div><div class="cons-team-seed">#${
+      r.seed
+    } seed</div>`;
+    team.appendChild(teamMeta);
+
+    const scoreBlock = document.createElement('div');
+    scoreBlock.className = 'cons-score-block';
+    const total = document.createElement('div');
+    total.className = 'cons-total';
+    total.textContent = fmtPts(r.score);
+    scoreBlock.appendChild(total);
+
+    row.appendChild(rank);
+    row.appendChild(team);
+    row.appendChild(scoreBlock);
+    list.appendChild(row);
+  });
+  wrap.appendChild(list);
+
+  return wrap;
 }
 
 // Consolation standings: every team that isn't in the "final four" (seeds 1,
@@ -671,6 +736,7 @@ function renderPlayoffScoreboard() {
   if (!pd || !pd.pointsByWeek) {
     grid.innerHTML = '<div class="loading">Loading playoff data…</div>';
     el('consolationWrap').classList.add('hidden');
+    el('byeWrap').classList.add('hidden');
     return;
   }
   const { pointsByWeek } = pd;
@@ -684,34 +750,53 @@ function renderPlayoffScoreboard() {
   const seed4 = seedRosterId(4);
   const seed5 = seedRosterId(5);
 
-  // Boogie Bowl only shows while its own week is selected - by Round 1 it's
-  // already folded into whichever Round 1 matchup its winner is playing in.
+  const byeWrap = el('byeWrap');
+  byeWrap.innerHTML = '';
+  byeWrap.classList.add('hidden');
+
+  // Only the round that's actually live for the selected week shows - not
+  // every round the bracket has worked through so far.
   if (uptoWeek === start) {
+    // Boogie Bowl week: seed4 vs seed5 play; seeds 1-3 are on a bye.
     const bbFinal = start < state.currentStateWeek;
     grid.appendChild(buildPlayoffCard(`Boogie Bowl · Week ${start}`, seed4, seed5, [start], pointsByWeek, bbFinal));
-  }
 
-  const bbWinnerSeed = computeBoogieBowlWinnerSeed(pointsByWeek);
-  const bracket = state.boogieBowlSaved ? resolveBoogieBowlBracket(state.boogieBowlSaved, bbWinnerSeed) : null;
+    byeWrap.appendChild(buildByeSection(pointsByWeek, start));
+    byeWrap.classList.remove('hidden');
+  } else if (uptoWeek === round1Weeks[1]) {
+    // Round 1 week: whoever the Boogie Bowl winner drew, plus the other Round 1 pairing.
+    const bbWinnerSeed = computeBoogieBowlWinnerSeed(pointsByWeek);
+    const bracket = state.boogieBowlSaved ? resolveBoogieBowlBracket(state.boogieBowlSaved, bbWinnerSeed) : null;
 
-  if (!bracket || bracket.pending) {
-    grid.appendChild(
-      buildPendingCard(
-        'Round 1 pairing pending',
-        bbWinnerSeed == null
-          ? `Waiting on the Boogie Bowl (${rosterName(seed4)} vs ${rosterName(seed5)}) to finish.`
-          : `${rosterName(seed1)} hasn't saved a Boogie Bowl preference yet - set one on the Standings tab.`
-      )
-    );
-  } else {
-    const oneOppRoster = seedRosterId(bracket.oneSeedOpponentSeed);
-    const twoOppRoster = seedRosterId(bracket.twoSeedOpponentSeed);
+    if (!bracket || bracket.pending) {
+      grid.appendChild(
+        buildPendingCard(
+          'Round 1 pairing pending',
+          bbWinnerSeed == null
+            ? `Waiting on the Boogie Bowl (${rosterName(seed4)} vs ${rosterName(seed5)}) to finish.`
+            : `${rosterName(seed1)} hasn't saved a Boogie Bowl preference yet - set one on the Standings tab.`
+        )
+      );
+    } else {
+      const oneOppRoster = seedRosterId(bracket.oneSeedOpponentSeed);
+      const twoOppRoster = seedRosterId(bracket.twoSeedOpponentSeed);
+      const round1Final = round1Weeks.every((w) => w < state.currentStateWeek);
+
+      grid.appendChild(buildPlayoffCard('Round 1 · 2-week total', seed1, oneOppRoster, round1Weeks, pointsByWeek, round1Final));
+      grid.appendChild(buildPlayoffCard('Round 1 · 2-week total', seed2, twoOppRoster, round1Weeks, pointsByWeek, round1Final));
+    }
+  } else if (uptoWeek >= finalWeeks[0]) {
+    // Championship week(s): needs Round 1's final result to know who's playing.
+    const bbWinnerSeed = computeBoogieBowlWinnerSeed(pointsByWeek);
+    const bracket = state.boogieBowlSaved ? resolveBoogieBowlBracket(state.boogieBowlSaved, bbWinnerSeed) : null;
     const round1Final = round1Weeks.every((w) => w < state.currentStateWeek);
 
-    grid.appendChild(buildPlayoffCard('Round 1 · 2-week total', seed1, oneOppRoster, round1Weeks, pointsByWeek, round1Final));
-    grid.appendChild(buildPlayoffCard('Round 1 · 2-week total', seed2, twoOppRoster, round1Weeks, pointsByWeek, round1Final));
+    if (!bracket || bracket.pending || !round1Final) {
+      grid.appendChild(buildPendingCard('Championship pairing pending', 'Waiting on Round 1 to finish.'));
+    } else {
+      const oneOppRoster = seedRosterId(bracket.oneSeedOpponentSeed);
+      const twoOppRoster = seedRosterId(bracket.twoSeedOpponentSeed);
 
-    if (round1Final && uptoWeek >= finalWeeks[0]) {
       const oneTotal = sumWeeksKind(pointsByWeek, round1Weeks, seed1, 'actual');
       const oneOppTotal = sumWeeksKind(pointsByWeek, round1Weeks, oneOppRoster, 'actual');
       const twoTotal = sumWeeksKind(pointsByWeek, round1Weeks, seed2, 'actual');

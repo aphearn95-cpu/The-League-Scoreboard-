@@ -9,8 +9,16 @@
 <body>
   <header class="topbar">
     <div class="title-block">
-      <h1 id="leagueTitle">Loading…</h1>
-      <div id="leagueSeason" class="subtitle"></div>
+      <div class="brand">
+        <div class="brand-logo">
+          <img src="assets/logo.png" alt="The League crest" class="brand-logo-img" />
+          <span id="brandYear" class="brand-logo-year"></span>
+        </div>
+        <div class="brand-text">
+          <h1 id="leagueTitle">Loading…</h1>
+          <div id="leagueSeason" class="subtitle"></div>
+        </div>
+      </div>
     </div>
 
     <nav class="tabs">
@@ -32,6 +40,7 @@
   <main id="scoreboardView" class="view">
     <h3 id="scoreboardSectionHeading" class="section-heading hidden"></h3>
     <div id="scoreboardGrid" class="scoreboard-grid"></div>
+    <div id="byeWrap" class="hidden"></div>
     <div id="consolationWrap" class="hidden"></div>
   </main>
 
